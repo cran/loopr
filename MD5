@@ -1,0 +1,17 @@
+a82681bcdd31e3d62f4c061d320e987b *DESCRIPTION
+85ac4a91f14f7b1eb1446a6382a26cd9 *LICENSE
+6c0741a9607b1aba85d8c568098c130c *NAMESPACE
+8c78ae8d72757e1d5ca997e9d971c7e7 *R/loopr.R
+bf74b34dc42202257e13bd9980ca6e3a *README.md
+90edad887ed8ace6150a750dffaabc7e *build/vignette.rds
+8b250f125575c6ac65b305a925e1d007 *inst/doc/Looping.R
+999b8cb11bdddf9492e7e3fc0fd89660 *inst/doc/Looping.Rmd
+c8d8f1ace118fe4748fb95e732453dc3 *inst/doc/Looping.html
+afd66bc62a25f47faee9c9651c1dc944 *man/amend.Rd
+52ab3ad8553780c9089bd33fa5ef948b *man/amendColumns.Rd
+c7c9d9d7ca5cd1d501e436186212c509 *man/fillColumns.Rd
+3a3748d69b1e86f7330cf555afdeb66c *man/insert.Rd
+024c499752e1aaa8ab7f8895053d2d45 *man/loop.Rd
+1a4c5808a77a5539a9e5867599acbfa6 *man/loopr-package.Rd
+5a13928e5582e02ed3d5a96ad794546b *man/stack.Rd
+999b8cb11bdddf9492e7e3fc0fd89660 *vignettes/Looping.Rmd

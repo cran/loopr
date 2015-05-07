@@ -1,0 +1,231 @@
+---
+title: "Looping"
+author: "Brandon Taylor"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Looping}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+# Looping
+
+## Introduction
+This package contains a flexible framework for extending the pipe into a loop. The basic idea is this: I often run into the problem of wanting to access an unnamed intermediate in a pipe. Why? A basic strategy of working with data frames is to focus on a certain aspect of the data frame, make some changes, and then reincorporate these changes into the original data frame. This work-flow is best understood through illustration.
+
+### Note
+This tutorial assumes familiarity with Hadley Wickham's `dplyr` and `magrittr` packages. If you don't know what I'm talking about, go look them up. Your life is about to get a whole lot easier
+
+###Set-up
+
+Import useful libraries for chaining, `knitr` for table output, and of course, `loopr`.
+```{r, message=FALSE}
+library(loopr)
+library(dplyr)
+library(magrittr)
+library(knitr)
+```
+
+Define our loop object.
+```{r}
+loop = loop$new()
+```
+
+Set up an extremely simple data frame for illustration.
+```{r}
+id = c(1, 2, 3, 4)
+toFix = c(0, 0, 1, 1)
+group = c(1, 1, 1, 0)
+example = data_frame(id, toFix, group)
+kable(example)
+```
+
+## Stack
+
+`loopr` relies a stack framework. Let's initialize one.
+
+```{r}
+stack = stack$new()
+````
+
+We can `push` data onto the `stack` like this.
+```{r}
+stack$push(1)
+stack$push(2)
+stack$push(3)
+````
+
+We can `peek` at the top of the `stack`:
+```{r}
+stack$peek
+````
+
+or at the whole thing.
+```{r}
+stack$stack
+````
+
+We can find the `height` of the `stack` as well:
+```{r}
+stack$height
+```
+
+We can also `pop` off items from the `stack`:
+```{r}
+stack$pop
+stack$pop
+stack$pop
+```
+
+Now the `stack` is empty.
+```{r}
+stack$stack
+```
+
+
+##Loop
+Why is this important? A `loop` object inherits from `stack`.
+
+### Begin
+The `begin` method is simply a copy of `push`. After the loop begins, you can focus on any part of your data while still having access to the original data.
+
+```{r}
+"first" %>%
+loop$begin()
+```
+
+### End
+To end the loop, you need to merge the data at the beginning of the loop with the data at the end. There are two ending methods defined in `loopr`: `end` and `cross`. Ending the loop takes a function, uses a `pop` from the `loop` `stack` as the first argument to the given function, and its own first argument (or chained argument) as the second.
+
+```{r}
+"second" %>%
+  loop$end(paste)
+```
+
+### Cross
+`cross` is nearly identical, but the order of the arguments gets reversed.
+
+```{r}
+"first" %>%
+  loop$begin()
+
+"second" %>%
+  loop$cross(paste)
+```
+
+This is much easier to explain in code than in words.
+
+```{r, eval=FALSE}
+end(endData, FUN, ...) = FUN(stack$pop, endData, ...)
+
+cross(crossData, FUN, ...) = FUN(crossData, stack$pop, ...)
+```
+
+## Ending functions
+There are two useful ending functions that are included in this package:`insert` and `amend`. Why are special ending functions needed? In general, traditional join functions are not well suited to the focus-modify-restore work-flow. We need `insert` and `amend` to prioritize information in modified data over information in the original data.
+
+### insert
+`insert` is the slightly more simple case. Let's use our example data again.
+
+Create a set of data to `insert`.
+```{r}
+insertData =
+  example %>%
+  filter(toFix == 0) %>%
+  mutate(toFix = 1) %>%
+  select(-group)
+```
+
+Now let's `insert` it back into the original data.
+```{r}
+insert(example, insertData, by = "id")
+```
+
+What happened? Where the `by` variables matched, `insert` excised all rows from `example` and inserted `insertData`. At the end, data was sorted by the `by` variable.
+
+### amend
+Let's take a look at the slightly more complicated ending function: `amend`. To understand amend, we first need to understand the underlying column update function.
+
+#### amendColumns
+`amendColumns` updates an old set of columns with all non-`NA` values from a matching new set of columns.
+
+```{r}
+oldColumn = c(0, 0)
+newColumn = c(1, NA)
+data_frame(oldColumn, newColumn) %>%
+  amendColumns("oldColumn", "newColumn")
+```
+
+###fillColumns
+There is also a matching function called  fillColumns. In this function, `NA`'s from `newColumn` are replaced with numbers from the `oldColumn`, but nothing else.
+
+```{r}
+oldColumn = c(0, 0)
+newColumn = c(1, NA)
+data_frame(oldColumn, newColumn) %>%
+  fillColumns("newColumn", "oldColumn")
+```
+
+### amend
+`amend` is simply `dplyr::full_join` followed by `amendColumns` to over-write non-key columns from the original dataset with matching-named columns from the new dataset. In this case, `group` from `amendData` overwrites `group` from `example`.
+
+```{r}
+amendData = insertData
+
+amend(example, amendData, by = "id")
+```
+
+If it is not included, `by` defaults to the grouping variables in data.
+
+```{r}
+amendData = insertData
+
+example %<>% group_by(id)
+
+amend(example, amendData)
+```
+
+A warning: `amend` internally uses the suffix `"toFix"`. If this suffix is already used in your data, modify the `suffix` argument.
+
+##Illustration
+Now that we understsand how it works, let's use use our `loop`!
+
+Remind ourselves of what the `example` data looks like.
+
+```{r}
+kable(example)
+```
+
+### Conditional mutation
+
+Here, we convert the toFix value in the first row from a 0 to a 1.
+```{r}
+example %>%
+  ungroup %>%
+  loop$begin() %>%
+    slice(1) %>%
+    mutate(toFix = 1) %>%
+  loop$end(insert, by = "id") %>%
+  kable
+```
+
+In general, `insert` is best suited to `filter`/`slice` type operations.
+
+### Merged summarize
+
+Here, we summarize toFix in each of the two groups, reverse the results, and then reintegrate the summary into the original data.
+
+```{r}
+example %>%
+  group_by(group) %>%
+  loop$begin() %>%
+    summarize(toFix = mean(toFix)) %>%
+    mutate(group = rev(group)) %>%
+  loop$end(amend) %>%
+  kable
+```
+
+In general, `amend` is best suited to `summarize`/`do` type operations.
+
+This is only the tip of the iceberg. Do not feel limited to using `amend` and `insert` as ending functions. A whole host of others could be useful: join functions, merge functions, even setNames. Loops within loops are in fact quite possible. I would be cautious using them. It can be exhilarating, but make sure to indent each loop carefully.
