@@ -5,7 +5,7 @@ library(magrittr)
 library(knitr)
 
 ## ------------------------------------------------------------------------
-loop = loop$new()
+loop = loopClass$new()
 
 ## ------------------------------------------------------------------------
 id = c(1, 2, 3, 4)
@@ -15,18 +15,20 @@ example = data_frame(id, toFix, group)
 kable(example)
 
 ## ------------------------------------------------------------------------
-stack = stack$new()
+stack = stackClass$new()
 
 ## ------------------------------------------------------------------------
-stack$push(1)
-stack$push(2)
-stack$push(3)
+stack$push(1, name = "first")
+stack$push(2, name = "second")
+stack$push(3, name = "third")
 
 ## ------------------------------------------------------------------------
 stack$peek
 
 ## ------------------------------------------------------------------------
-stack$stack
+stack$stack %>%
+  as.data.frame %>%
+  kable
 
 ## ------------------------------------------------------------------------
 stack$height
@@ -66,32 +68,47 @@ insertData =
   mutate(toFix = 1) %>%
   select(-group)
 
+kable(insertData)
+
 ## ------------------------------------------------------------------------
-insert(example, insertData, by = "id")
+insert(example, insertData, by = "id") %>%
+  kable
+
+## ------------------------------------------------------------------------
+oldColumn1 = c(0, 0);
+newColumn1 = c(1, NA)
+oldColumn2 = c(0, 0);
+newColumn2 = c(NA, 1)
+columnData = data_frame(oldColumn1, newColumn1, oldColumn2, newColumn2)
+kable(columnData)
+
+## ------------------------------------------------------------------------
+columnData %>%
+  amendColumns(
+    c("oldColumn1", "oldColumn2"), 
+    c("newColumn1", "newColumn2")) %>%
+  kable
 
 ## ------------------------------------------------------------------------
 oldColumn = c(0, 0)
 newColumn = c(1, NA)
-data_frame(oldColumn, newColumn) %>%
-  amendColumns("oldColumn", "newColumn")
-
-## ------------------------------------------------------------------------
-oldColumn = c(0, 0)
-newColumn = c(1, NA)
-data_frame(oldColumn, newColumn) %>%
-  fillColumns("newColumn", "oldColumn")
+columnData %>%
+  fillColumns(c("newColumn1", "newColumn2"),
+              c("oldColumn1", "oldColumn2")) %>%
+  kable
 
 ## ------------------------------------------------------------------------
 amendData = insertData
 
-amend(example, amendData, by = "id")
+example %>%
+  amend(amendData, by = "id") %>%
+  kable
 
 ## ------------------------------------------------------------------------
-amendData = insertData
-
-example %<>% group_by(id)
-
-amend(example, amendData)
+example %>% 
+  group_by(id) %>%
+  amend(amendData) %>%
+  kable
 
 ## ------------------------------------------------------------------------
 kable(example)
@@ -100,8 +117,8 @@ kable(example)
 example %>%
   ungroup %>%
   loop$begin() %>%
-    slice(1) %>%
-    mutate(toFix = 1) %>%
+    filter(group == 0) %>%
+    mutate(toFix = 0) %>%
   loop$end(insert, by = "id") %>%
   kable
 
@@ -112,5 +129,34 @@ example %>%
     summarize(toFix = mean(toFix)) %>%
     mutate(group = rev(group)) %>%
   loop$end(amend) %>%
+  kable
+
+## ------------------------------------------------------------------------
+example %>%
+  mutate(group = group + 1) %>%
+  loop$begin() %>%
+    names %>%
+    paste0("Suffix") %>%
+  loop$end(setNames) %>%
+  kable
+
+## ------------------------------------------------------------------------
+example %>%
+  mutate(replication = 1) %>%
+  loop$begin() %>%
+    mutate(replication = 2) %>%
+  loop$end(bind_rows) %>%
+  kable
+
+## ------------------------------------------------------------------------
+example %>%
+  loop$begin(name = "original") %>%
+    filter(group == 1) %>%
+    loop$begin(name = "filtered") %>%
+       names %>%
+       paste0("Extra") %>%
+    loop$end(setNames) %>%
+    rename(id = idExtra) %>%
+  loop$end(amend, by = "id") %>%
   kable
 

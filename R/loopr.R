@@ -1,3 +1,5 @@
+globalVariables(".")
+
 #' An implementation of a stack
 #' 
 #' @docType class
@@ -23,10 +25,10 @@
 #' \describe{
 #'   \item{\code{pop}}{This will return, but not remove, the last (most recent) item from the \code{stack}}}
 
-stack = R6Class(
-  "stack",
+stackClass = R6Class(
+  "stackClass",
   public = list(
-    stack = list("bottom" = NULL),
+    stack = list("bottom" = NA),
     push = function(item, name = "") {
       self$stack[[self$height + 1]] = item
       names(self$stack)[self$height] = name
@@ -51,22 +53,22 @@ stack = R6Class(
 #' @keywords data
 #' 
 #' @section Inherits:
-#' \describe{\item{\code{\link{stack}}}{}}
+#' \describe{\item{\code{\link{stackClass}}}{}}
 #' 
 #' @section Methods:
 #' \describe{\item{\code{
 #'   begin(item, name = "")}}{
-#'     Alias for \code{\link{stack}$push}}}
+#'     Alias for \code{\link{stackClass}$push}}}
 #' 
 #' \describe{\item{\code{
 #'   end(endData, FUN, ...)}}{
-#'     Will return \code{FUN(\link{stack}$pop, endData, ...)}}}
+#'     Will return \code{FUN(\link{stackClass}$pop, endData, ...)}}}
 #' 
 #' \describe{\item{\code{
 #'   cross(crossData, FUN, ...)}}{
-#'     Will return \code{FUN(crossData, \link{stack}$pop, ...)}}}
-loop = R6Class(
-  inherit = stack,
+#'     Will return \code{FUN(crossData, \link{stackClass}$pop, ...)}}}
+loopClass = R6Class(
+  inherit = stackClass,
   public = list(
     begin = function(item, name = "")
       self$push(item, name),
@@ -103,7 +105,7 @@ amendColumns = function(data, originalNames, amendNames) {
   
   data %>% 
     dplyr::mutate_(.dots = calls) %>%
-    dplyr::select_(.dots = paste0("-", amendNames))}
+    dplyr::select_(.dots = sprintf("-`%s`", amendNames))}
 
 #' Fill variables with new information
 #' 
@@ -158,7 +160,8 @@ amend = function(data, amendData, by = NULL, suffix = "toFix") {
     dplyr::groups() %>% 
     lapply(deparse) %>% 
     unlist %>% 
-    as.vector
+    as.vector 
+  
   if (is.null(by)) stop("Defaulted to merging by data grouping variables. However, no grouping variables found")
   
   #figure out which columns need to be merged.
@@ -171,13 +174,18 @@ amend = function(data, amendData, by = NULL, suffix = "toFix") {
     
     #else update columns then join
     toFix = paste0(commonNames, suffix = suffix)
+    
     if (sum(toFix %in% names(amendData)) > 0) stop ("suffix conflict. Please choose another suffix.")
     
+    names(toFix) = commonNames
+    
+    byLiteral = by %>% sprintf("`%s`", .)
+    
     amendData %>%
-      dplyr::rename_(.dots = as.list(commonNames) %>% setNames(toFix)) %>%
+      plyr::rename(toFix) %>%
       dplyr::full_join(data, by) %>% 
-      amendColumns(commonNames, toFix) %>%
-      dplyr::arrange_(.dots = by)}}
+      amendColumns(commonNames, unname(toFix)) %>%
+      dplyr::arrange_(.dots = byLiteral)}}
 
 #' Insert new information into a dataframe.
 #' 

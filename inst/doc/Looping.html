@@ -10,7 +10,7 @@
 
 <meta name="author" content="Brandon Taylor" />
 
-<meta name="date" content="2015-05-06" />
+<meta name="date" content="2015-05-27" />
 
 <title>Looping</title>
 
@@ -54,7 +54,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">Looping</h1>
 <h4 class="author"><em>Brandon Taylor</em></h4>
-<h4 class="date"><em>2015-05-06</em></h4>
+<h4 class="date"><em>2015-05-27</em></h4>
 </div>
 
 
@@ -75,7 +75,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <span class="kw">library</span>(magrittr)
 <span class="kw">library</span>(knitr)</code></pre>
 <p>Define our loop object.</p>
-<pre class="sourceCode r"><code class="sourceCode r">loop =<span class="st"> </span>loop$<span class="kw">new</span>()</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">loop =<span class="st"> </span>loopClass$<span class="kw">new</span>()</code></pre>
 <p>Set up an extremely simple data frame for illustration.</p>
 <pre class="sourceCode r"><code class="sourceCode r">id =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)
 toFix =<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>)
@@ -117,31 +117,40 @@ example =<span class="st"> </span><span class="kw">data_frame</span>(id, toFix, 
 </div>
 <div id="stack" class="section level2">
 <h2>Stack</h2>
-<p><code>loopr</code> relies a stack framework. Let’s initialize one.</p>
-<pre class="sourceCode r"><code class="sourceCode r">stack =<span class="st"> </span>stack$<span class="kw">new</span>()</code></pre>
-<p>We can <code>push</code> data onto the <code>stack</code> like this.</p>
-<pre class="sourceCode r"><code class="sourceCode r">stack$<span class="kw">push</span>(<span class="dv">1</span>)</code></pre>
+<p><code>loopr</code> relies on a stack framework. Let’s initialize one.</p>
+<pre class="sourceCode r"><code class="sourceCode r">stack =<span class="st"> </span>stackClass$<span class="kw">new</span>()</code></pre>
+<p>We can <code>push</code> data onto the <code>stack</code> like this. The names are optional.</p>
+<pre class="sourceCode r"><code class="sourceCode r">stack$<span class="kw">push</span>(<span class="dv">1</span>, <span class="dt">name =</span> <span class="st">&quot;first&quot;</span>)</code></pre>
 <pre><code>## [1] 1</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r">stack$<span class="kw">push</span>(<span class="dv">2</span>)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">stack$<span class="kw">push</span>(<span class="dv">2</span>, <span class="dt">name =</span> <span class="st">&quot;second&quot;</span>)</code></pre>
 <pre><code>## [1] 2</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r">stack$<span class="kw">push</span>(<span class="dv">3</span>)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">stack$<span class="kw">push</span>(<span class="dv">3</span>, <span class="dt">name =</span> <span class="st">&quot;third&quot;</span>)</code></pre>
 <pre><code>## [1] 3</code></pre>
 <p>We can <code>peek</code> at the top of the <code>stack</code>:</p>
 <pre class="sourceCode r"><code class="sourceCode r">stack$peek</code></pre>
 <pre><code>## [1] 3</code></pre>
 <p>or at the whole thing.</p>
-<pre class="sourceCode r"><code class="sourceCode r">stack$stack</code></pre>
-<pre><code>## $bottom
-## NULL
-## 
-## [[2]]
-## [1] 1
-## 
-## [[3]]
-## [1] 2
-## 
-## [[4]]
-## [1] 3</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">stack$stack %&gt;%
+<span class="st">  </span>as.data.frame %&gt;%
+<span class="st">  </span>kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">bottom</th>
+<th align="right">first</th>
+<th align="right">second</th>
+<th align="right">third</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">NA</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+</tr>
+</tbody>
+</table>
 <p>We can find the <code>height</code> of the <code>stack</code> as well:</p>
 <pre class="sourceCode r"><code class="sourceCode r">stack$height</code></pre>
 <pre><code>## [1] 4</code></pre>
@@ -155,7 +164,7 @@ example =<span class="st"> </span><span class="kw">data_frame</span>(id, toFix, 
 <p>Now the <code>stack</code> is empty.</p>
 <pre class="sourceCode r"><code class="sourceCode r">stack$stack</code></pre>
 <pre><code>## $bottom
-## NULL</code></pre>
+## [1] NA</code></pre>
 </div>
 <div id="loop" class="section level2">
 <h2>Loop</h2>
@@ -200,17 +209,62 @@ loop$<span class="kw">begin</span>()</code></pre>
 <span class="st">  </span>example %&gt;%
 <span class="st">  </span><span class="kw">filter</span>(toFix ==<span class="st"> </span><span class="dv">0</span>) %&gt;%
 <span class="st">  </span><span class="kw">mutate</span>(<span class="dt">toFix =</span> <span class="dv">1</span>) %&gt;%
-<span class="st">  </span><span class="kw">select</span>(-group)</code></pre>
+<span class="st">  </span><span class="kw">select</span>(-group)
+
+<span class="kw">kable</span>(insertData)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">id</th>
+<th align="right">toFix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
 <p>Now let’s <code>insert</code> it back into the original data.</p>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">insert</span>(example, insertData, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>)</code></pre>
-<pre><code>## Source: local data frame [4 x 3]
-## 
-##   id toFix group
-## 1  1     1    NA
-## 2  2     1    NA
-## 3  3     1     1
-## 4  4     1     0</code></pre>
-<p>What happened? Where the <code>by</code> variables matched, <code>insert</code> excised all rows from <code>example</code> and inserted <code>insertData</code>. At the end, data was sorted by the <code>by</code> variable.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">insert</span>(example, insertData, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>) %&gt;%
+<span class="st">  </span>kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">id</th>
+<th align="right">toFix</th>
+<th align="right">group</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>What happened? Where the <code>by</code> variables matched, <code>insert</code> excised all rows from <code>example</code> and inserted <code>insertData</code>. At the end, data was sorted by the <code>by</code> variable. The <code>by</code> variable (or variables) must be included in the function call.</p>
 </div>
 <div id="amend" class="section level3">
 <h3>amend</h3>
@@ -218,15 +272,61 @@ loop$<span class="kw">begin</span>()</code></pre>
 <div id="amendcolumns" class="section level4">
 <h4>amendColumns</h4>
 <p><code>amendColumns</code> updates an old set of columns with all non-<code>NA</code> values from a matching new set of columns.</p>
-<pre class="sourceCode r"><code class="sourceCode r">oldColumn =<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)
-newColumn =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="ot">NA</span>)
-<span class="kw">data_frame</span>(oldColumn, newColumn) %&gt;%
-<span class="st">  </span><span class="kw">amendColumns</span>(<span class="st">&quot;oldColumn&quot;</span>, <span class="st">&quot;newColumn&quot;</span>)</code></pre>
-<pre><code>## Source: local data frame [2 x 1]
-## 
-##   oldColumn
-## 1         1
-## 2         0</code></pre>
+<p>Build example data.</p>
+<pre class="sourceCode r"><code class="sourceCode r">oldColumn1 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>);
+newColumn1 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="ot">NA</span>)
+oldColumn2 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>);
+newColumn2 =<span class="st"> </span><span class="kw">c</span>(<span class="ot">NA</span>, <span class="dv">1</span>)
+columnData =<span class="st"> </span><span class="kw">data_frame</span>(oldColumn1, newColumn1, oldColumn2, newColumn2)
+<span class="kw">kable</span>(columnData)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">oldColumn1</th>
+<th align="right">newColumn1</th>
+<th align="right">oldColumn2</th>
+<th align="right">newColumn2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">NA</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<p>Now run <code>amendColumns</code>.</p>
+<pre class="sourceCode r"><code class="sourceCode r">columnData %&gt;%
+<span class="st">  </span><span class="kw">amendColumns</span>(
+    <span class="kw">c</span>(<span class="st">&quot;oldColumn1&quot;</span>, <span class="st">&quot;oldColumn2&quot;</span>), 
+    <span class="kw">c</span>(<span class="st">&quot;newColumn1&quot;</span>, <span class="st">&quot;newColumn2&quot;</span>)) %&gt;%
+<span class="st">  </span>kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">oldColumn1</th>
+<th align="right">oldColumn2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div id="fillcolumns" class="section level3">
@@ -234,48 +334,112 @@ newColumn =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1
 <p>There is also a matching function called fillColumns. In this function, <code>NA</code>’s from <code>newColumn</code> are replaced with numbers from the <code>oldColumn</code>, but nothing else.</p>
 <pre class="sourceCode r"><code class="sourceCode r">oldColumn =<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)
 newColumn =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="ot">NA</span>)
-<span class="kw">data_frame</span>(oldColumn, newColumn) %&gt;%
-<span class="st">  </span><span class="kw">fillColumns</span>(<span class="st">&quot;newColumn&quot;</span>, <span class="st">&quot;oldColumn&quot;</span>)</code></pre>
-<pre><code>## Source: local data frame [2 x 1]
-## 
-##   newColumn
-## 1         1
-## 2         0</code></pre>
+columnData %&gt;%
+<span class="st">  </span><span class="kw">fillColumns</span>(<span class="kw">c</span>(<span class="st">&quot;newColumn1&quot;</span>, <span class="st">&quot;newColumn2&quot;</span>),
+              <span class="kw">c</span>(<span class="st">&quot;oldColumn1&quot;</span>, <span class="st">&quot;oldColumn2&quot;</span>)) %&gt;%
+<span class="st">  </span>kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">newColumn1</th>
+<th align="right">newColumn2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="amend-1" class="section level3">
 <h3>amend</h3>
 <p><code>amend</code> is simply <code>dplyr::full_join</code> followed by <code>amendColumns</code> to over-write non-key columns from the original dataset with matching-named columns from the new dataset. In this case, <code>group</code> from <code>amendData</code> overwrites <code>group</code> from <code>example</code>.</p>
 <pre class="sourceCode r"><code class="sourceCode r">amendData =<span class="st"> </span>insertData
 
-<span class="kw">amend</span>(example, amendData, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>)</code></pre>
+example %&gt;%
+<span class="st">  </span><span class="kw">amend</span>(amendData, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>) %&gt;%
+<span class="st">  </span>kable</code></pre>
 <pre><code>## Amending columns: toFix</code></pre>
-<pre><code>## Source: local data frame [4 x 3]
-## 
-##   id toFix group
-## 1  1     1     1
-## 2  2     1     1
-## 3  3     1     1
-## 4  4     1     0</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">id</th>
+<th align="right">toFix</th>
+<th align="right">group</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
 <p>If it is not included, <code>by</code> defaults to the grouping variables in data.</p>
-<pre class="sourceCode r"><code class="sourceCode r">amendData =<span class="st"> </span>insertData
-
-example %&lt;&gt;%<span class="st"> </span><span class="kw">group_by</span>(id)
-
-<span class="kw">amend</span>(example, amendData)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">example %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">group_by</span>(id) %&gt;%
+<span class="st">  </span><span class="kw">amend</span>(amendData) %&gt;%
+<span class="st">  </span>kable</code></pre>
 <pre><code>## Amending columns: toFix</code></pre>
-<pre><code>## Source: local data frame [4 x 3]
-## 
-##   id toFix group
-## 1  1     1     1
-## 2  2     1     1
-## 3  3     1     1
-## 4  4     1     0</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">id</th>
+<th align="right">toFix</th>
+<th align="right">group</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
 <p>A warning: <code>amend</code> internally uses the suffix <code>&quot;toFix&quot;</code>. If this suffix is already used in your data, modify the <code>suffix</code> argument.</p>
 </div>
 </div>
 <div id="illustration" class="section level2">
 <h2>Illustration</h2>
-<p>Now that we understsand how it works, let’s use use our <code>loop</code>!</p>
+<p>Now that we understand how it works, let’s use use our <code>loop</code>!</p>
 <p>Remind ourselves of what the <code>example</code> data looks like.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">kable</span>(example)</code></pre>
 <table>
@@ -311,12 +475,12 @@ example %&lt;&gt;%<span class="st"> </span><span class="kw">group_by</span>(id)
 </table>
 <div id="conditional-mutation" class="section level3">
 <h3>Conditional mutation</h3>
-<p>Here, we convert the toFix value in the first row from a 0 to a 1.</p>
+<p>Here, we convert <code>toFix</code> to 0 when <code>group</code> is 0.</p>
 <pre class="sourceCode r"><code class="sourceCode r">example %&gt;%
 <span class="st">  </span>ungroup %&gt;%
 <span class="st">  </span>loop$<span class="kw">begin</span>() %&gt;%
-<span class="st">    </span><span class="kw">slice</span>(<span class="dv">1</span>) %&gt;%
-<span class="st">    </span><span class="kw">mutate</span>(<span class="dt">toFix =</span> <span class="dv">1</span>) %&gt;%
+<span class="st">    </span><span class="kw">filter</span>(group ==<span class="st"> </span><span class="dv">0</span>) %&gt;%
+<span class="st">    </span><span class="kw">mutate</span>(<span class="dt">toFix =</span> <span class="dv">0</span>) %&gt;%
 <span class="st">  </span>loop$<span class="kw">end</span>(insert, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>) %&gt;%
 <span class="st">  </span>kable</code></pre>
 <table>
@@ -330,7 +494,7 @@ example %&lt;&gt;%<span class="st"> </span><span class="kw">group_by</span>(id)
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="right">1</td>
+<td align="right">0</td>
 <td align="right">1</td>
 </tr>
 <tr class="even">
@@ -345,7 +509,7 @@ example %&lt;&gt;%<span class="st"> </span><span class="kw">group_by</span>(id)
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="right">1</td>
+<td align="right">0</td>
 <td align="right">0</td>
 </tr>
 </tbody>
@@ -395,8 +559,176 @@ example %&lt;&gt;%<span class="st"> </span><span class="kw">group_by</span>(id)
 </tbody>
 </table>
 <p>In general, <code>amend</code> is best suited to <code>summarize</code>/<code>do</code> type operations.</p>
-<p>This is only the tip of the iceberg. Do not feel limited to using <code>amend</code> and <code>insert</code> as ending functions. A whole host of others could be useful: join functions, merge functions, even setNames. Loops within loops are in fact quite possible. I would be cautious using them. It can be exhilarating, but make sure to indent each loop carefully.</p>
+<p>This is only the tip of the iceberg. Do not feel limited to using <code>amend</code> and <code>insert</code> as ending functions. A whole host of others could be useful: join functions, merge functions, even setNames.</p>
 </div>
+<div id="setnames" class="section level3">
+<h3>setNames</h3>
+<p>Here, we will suffix the names of all the variables within the context of a chain.</p>
+<pre class="sourceCode r"><code class="sourceCode r">example %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">group =</span> group +<span class="st"> </span><span class="dv">1</span>) %&gt;%
+<span class="st">  </span>loop$<span class="kw">begin</span>() %&gt;%
+<span class="st">    </span>names %&gt;%
+<span class="st">    </span><span class="kw">paste0</span>(<span class="st">&quot;Suffix&quot;</span>) %&gt;%
+<span class="st">  </span>loop$<span class="kw">end</span>(setNames) %&gt;%
+<span class="st">  </span>kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">idSuffix</th>
+<th align="right">toFixSuffix</th>
+<th align="right">groupSuffix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="bind_rows" class="section level3">
+<h3>bind_rows</h3>
+<p>Here, we will double the data.</p>
+<pre class="sourceCode r"><code class="sourceCode r">example %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">replication =</span> <span class="dv">1</span>) %&gt;%
+<span class="st">  </span>loop$<span class="kw">begin</span>() %&gt;%
+<span class="st">    </span><span class="kw">mutate</span>(<span class="dt">replication =</span> <span class="dv">2</span>) %&gt;%
+<span class="st">  </span>loop$<span class="kw">end</span>(bind_rows) %&gt;%
+<span class="st">  </span>kable</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">id</th>
+<th align="right">toFix</th>
+<th align="right">group</th>
+<th align="right">replication</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="loops-within-loops" class="section level2">
+<h2>Loops within loops</h2>
+<p>Loops within loops are in fact quite possible. I would be cautious using them. It can be exhilarating, but make sure to indent each loop carefully. Also, it is a good idea to give a name to each loop. This allows one to interpret <code>loop$stack</code> for debugging. Here is a quick example that filters the data, replicates the columns, and then re-merges.</p>
+<pre class="sourceCode r"><code class="sourceCode r">example %&gt;%
+<span class="st">  </span>loop$<span class="kw">begin</span>(<span class="dt">name =</span> <span class="st">&quot;original&quot;</span>) %&gt;%
+<span class="st">    </span><span class="kw">filter</span>(group ==<span class="st"> </span><span class="dv">1</span>) %&gt;%
+<span class="st">    </span>loop$<span class="kw">begin</span>(<span class="dt">name =</span> <span class="st">&quot;filtered&quot;</span>) %&gt;%
+<span class="st">       </span>names %&gt;%
+<span class="st">       </span><span class="kw">paste0</span>(<span class="st">&quot;Extra&quot;</span>) %&gt;%
+<span class="st">    </span>loop$<span class="kw">end</span>(setNames) %&gt;%
+<span class="st">    </span><span class="kw">rename</span>(<span class="dt">id =</span> idExtra) %&gt;%
+<span class="st">  </span>loop$<span class="kw">end</span>(amend, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>) %&gt;%
+<span class="st">  </span>kable</code></pre>
+<pre><code>## Joining by: &quot;id&quot;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">id</th>
+<th align="right">toFix</th>
+<th align="right">group</th>
+<th align="right">toFixExtra</th>
+<th align="right">groupExtra</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 

@@ -29,7 +29,7 @@ library(knitr)
 
 Define our loop object.
 ```{r}
-loop = loop$new()
+loop = loopClass$new()
 ```
 
 Set up an extremely simple data frame for illustration.
@@ -43,17 +43,17 @@ kable(example)
 
 ## Stack
 
-`loopr` relies a stack framework. Let's initialize one.
+`loopr` relies on a stack framework. Let's initialize one.
 
 ```{r}
-stack = stack$new()
+stack = stackClass$new()
 ````
 
-We can `push` data onto the `stack` like this.
+We can `push` data onto the `stack` like this. The names are optional.
 ```{r}
-stack$push(1)
-stack$push(2)
-stack$push(3)
+stack$push(1, name = "first")
+stack$push(2, name = "second")
+stack$push(3, name = "third")
 ````
 
 We can `peek` at the top of the `stack`:
@@ -62,8 +62,11 @@ stack$peek
 ````
 
 or at the whole thing.
+
 ```{r}
-stack$stack
+stack$stack %>%
+  as.data.frame %>%
+  kable
 ````
 
 We can find the `height` of the `stack` as well:
@@ -135,14 +138,17 @@ insertData =
   filter(toFix == 0) %>%
   mutate(toFix = 1) %>%
   select(-group)
+
+kable(insertData)
 ```
 
 Now let's `insert` it back into the original data.
 ```{r}
-insert(example, insertData, by = "id")
+insert(example, insertData, by = "id") %>%
+  kable
 ```
 
-What happened? Where the `by` variables matched, `insert` excised all rows from `example` and inserted `insertData`. At the end, data was sorted by the `by` variable.
+What happened? Where the `by` variables matched, `insert` excised all rows from `example` and inserted `insertData`. At the end, data was sorted by the `by` variable. The `by` variable (or variables) must be included in the function call.
 
 ### amend
 Let's take a look at the slightly more complicated ending function: `amend`. To understand amend, we first need to understand the underlying column update function.
@@ -150,11 +156,23 @@ Let's take a look at the slightly more complicated ending function: `amend`. To 
 #### amendColumns
 `amendColumns` updates an old set of columns with all non-`NA` values from a matching new set of columns.
 
+Build example data.
 ```{r}
-oldColumn = c(0, 0)
-newColumn = c(1, NA)
-data_frame(oldColumn, newColumn) %>%
-  amendColumns("oldColumn", "newColumn")
+oldColumn1 = c(0, 0);
+newColumn1 = c(1, NA)
+oldColumn2 = c(0, 0);
+newColumn2 = c(NA, 1)
+columnData = data_frame(oldColumn1, newColumn1, oldColumn2, newColumn2)
+kable(columnData)
+```
+
+Now run `amendColumns`.
+```{r}
+columnData %>%
+  amendColumns(
+    c("oldColumn1", "oldColumn2"), 
+    c("newColumn1", "newColumn2")) %>%
+  kable
 ```
 
 ###fillColumns
@@ -163,8 +181,10 @@ There is also a matching function called  fillColumns. In this function, `NA`'s 
 ```{r}
 oldColumn = c(0, 0)
 newColumn = c(1, NA)
-data_frame(oldColumn, newColumn) %>%
-  fillColumns("newColumn", "oldColumn")
+columnData %>%
+  fillColumns(c("newColumn1", "newColumn2"),
+              c("oldColumn1", "oldColumn2")) %>%
+  kable
 ```
 
 ### amend
@@ -173,23 +193,24 @@ data_frame(oldColumn, newColumn) %>%
 ```{r}
 amendData = insertData
 
-amend(example, amendData, by = "id")
+example %>%
+  amend(amendData, by = "id") %>%
+  kable
 ```
 
 If it is not included, `by` defaults to the grouping variables in data.
 
 ```{r}
-amendData = insertData
-
-example %<>% group_by(id)
-
-amend(example, amendData)
+example %>% 
+  group_by(id) %>%
+  amend(amendData) %>%
+  kable
 ```
 
 A warning: `amend` internally uses the suffix `"toFix"`. If this suffix is already used in your data, modify the `suffix` argument.
 
 ##Illustration
-Now that we understsand how it works, let's use use our `loop`!
+Now that we understand how it works, let's use use our `loop`!
 
 Remind ourselves of what the `example` data looks like.
 
@@ -199,13 +220,13 @@ kable(example)
 
 ### Conditional mutation
 
-Here, we convert the toFix value in the first row from a 0 to a 1.
+Here, we convert `toFix` to 0 when `group` is 0.
 ```{r}
 example %>%
   ungroup %>%
   loop$begin() %>%
-    slice(1) %>%
-    mutate(toFix = 1) %>%
+    filter(group == 0) %>%
+    mutate(toFix = 0) %>%
   loop$end(insert, by = "id") %>%
   kable
 ```
@@ -228,4 +249,47 @@ example %>%
 
 In general, `amend` is best suited to `summarize`/`do` type operations.
 
-This is only the tip of the iceberg. Do not feel limited to using `amend` and `insert` as ending functions. A whole host of others could be useful: join functions, merge functions, even setNames. Loops within loops are in fact quite possible. I would be cautious using them. It can be exhilarating, but make sure to indent each loop carefully.
+This is only the tip of the iceberg. Do not feel limited to using `amend` and `insert` as ending functions. A whole host of others could be useful: join functions, merge functions, even setNames.
+
+### setNames
+
+Here, we will suffix the names of all the variables within the context of a chain.
+
+```{r}
+example %>%
+  mutate(group = group + 1) %>%
+  loop$begin() %>%
+    names %>%
+    paste0("Suffix") %>%
+  loop$end(setNames) %>%
+  kable
+```
+
+### bind_rows
+
+Here, we will double the data.
+
+```{r}
+example %>%
+  mutate(replication = 1) %>%
+  loop$begin() %>%
+    mutate(replication = 2) %>%
+  loop$end(bind_rows) %>%
+  kable
+```
+
+##Loops within loops
+Loops within loops are in fact quite possible. I would be cautious using them. It can be exhilarating, but make sure to indent each loop carefully. Also, it is a good idea to give a name to each loop. This allows one to interpret `loop$stack` for debugging. Here is a quick example that filters the data, replicates the columns, and then re-merges.
+
+```{r}
+example %>%
+  loop$begin(name = "original") %>%
+    filter(group == 1) %>%
+    loop$begin(name = "filtered") %>%
+       names %>%
+       paste0("Extra") %>%
+    loop$end(setNames) %>%
+    rename(id = idExtra) %>%
+  loop$end(amend, by = "id") %>%
+  kable
+```
